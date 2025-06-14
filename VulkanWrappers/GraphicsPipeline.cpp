@@ -188,7 +188,7 @@ vk::PipelineRasterizationStateCreateInfo getRasterizationInfo()
 vk::PipelineMultisampleStateCreateInfo getMultisampleInfo()
 {
     vk::PipelineMultisampleStateCreateInfo info;
-    info.rasterizationSamples = vk::SampleCountFlagBits::e1;
+    info.rasterizationSamples = SAMPLE_COUNT_ENUM;
     return info;
 }
 

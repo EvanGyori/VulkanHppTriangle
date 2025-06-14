@@ -28,7 +28,9 @@ Swapchain::Swapchain(
     renderPass(renderPass),
     surface(surface),
     window(window.getHandle()),
-    handle(nullptr)
+    handle(nullptr),
+    multisampleImage(nullptr),
+    multisampleImageView(nullptr)
 {
     recreate();
     window.subscribeToFramebufferSizeEvent([this](int width, int height) {
@@ -81,7 +83,7 @@ void Swapchain::recreate(vk::SwapchainKHR oldSwapchain)
 	    getMinImageCount(capabilities),
 	    vk::Format::eR8G8B8A8Srgb,
 	    vk::ColorSpaceKHR::eSrgbNonlinear,
-	    getImageExtent(capabilities, window),
+	    extent,
 	    1,
 	    vk::ImageUsageFlagBits::eColorAttachment,
 	    vk::SharingMode::eExclusive,
@@ -94,11 +96,15 @@ void Swapchain::recreate(vk::SwapchainKHR oldSwapchain)
 
 	handle = device.getHandle().createSwapchainKHR(createInfo);
 
+	multisampleImage = MultisampleImage(device, extent);
+	multisampleImageView = ImageView(device.getHandle(), multisampleImage.getHandle());
+
 	images = handle.getImages();
 	framebuffers = std::vector<Framebuffer>();
 
 	for (int i = 0; i < images.size(); ++i) {
-	    framebuffers.emplace_back(device.getHandle(), renderPass, images[i], window);
+	    framebuffers.emplace_back(device.getHandle(), renderPass,
+		multisampleImageView.getHandle(), images[i], window);
 	}
     }
 }

@@ -1,6 +1,11 @@
 #include "Config.h"
 #include "ImageView.h"
 
+ImageView::ImageView(nullptr_t) :
+    handle(nullptr)
+{
+}
+
 ImageView::ImageView(
     vk::raii::Device& device,
     vk::Image image)

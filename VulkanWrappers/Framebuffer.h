@@ -11,7 +11,8 @@ public:
     Framebuffer(
 	vk::raii::Device& device,
 	vk::raii::RenderPass& renderPass,
-	vk::Image image,
+	vk::ImageView multisampleImageView,
+	vk::Image presentableImage,
 	GLFWwindow* window);
 
     vk::raii::Framebuffer& getHandle();

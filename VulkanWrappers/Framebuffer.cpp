@@ -4,6 +4,7 @@
 Framebuffer::Framebuffer(
     vk::raii::Device& device,
     vk::raii::RenderPass& renderPass,
+    vk::ImageView multisampleImageView,
     vk::Image image,
     GLFWwindow* window)
     : imageView(device, image),
@@ -12,12 +13,12 @@ Framebuffer::Framebuffer(
     int width, height;
     glfwGetFramebufferSize(window, &width, &height);
 
-    vk::ImageView viewHandle = imageView.getHandle();
+    vk::ImageView viewHandles[2] = { multisampleImageView, imageView.getHandle() };
 
     vk::FramebufferCreateInfo createInfo(
 	{},
 	renderPass,
-	viewHandle,
+	viewHandles,
 	static_cast<uint32_t>(width),
 	static_cast<uint32_t>(height),
 	1

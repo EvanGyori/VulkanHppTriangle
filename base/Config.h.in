@@ -1,3 +1,5 @@
 #pragma once
 
 #cmakedefine NDEBUG
+
+#define SAMPLE_COUNT_ENUM vk::SampleCountFlagBits::e8

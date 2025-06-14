@@ -5,6 +5,8 @@
 class ImageView
 {
 public:
+    ImageView(nullptr_t);
+
     ImageView(
 	vk::raii::Device& device,
 	vk::Image image);

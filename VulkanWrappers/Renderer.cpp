@@ -33,6 +33,12 @@ Renderer::~Renderer()
 
 void Renderer::draw(const std::vector<Vertex>& vertices)
 {
+    // wait till previous frame has finished rendering
+    frameFence.wait();
+    frameFence.reset();
+
+    // Must wait for fence since this may result in a window changed size callback
+    // which would recreate the swapchain even though it's images might still be in use
     glfwPollEvents();
 
     int width, height;
@@ -47,10 +53,6 @@ void Renderer::draw(const std::vector<Vertex>& vertices)
 	vk::Semaphore transferredSemaphoreHandle = transferredSemaphore.getHandle();
 
 	vk::Fence fenceHandle = frameFence.getHandle();
-
-	// wait till previous frame has finished rendering
-	frameFence.wait();
-	frameFence.reset();
 
 	// acquire next image
 	uint32_t imageIndex = swapchain.acquireNextImage(acquiredImageSemaphore.getHandle());

@@ -5,6 +5,7 @@
 #include "Device.h"
 #include "Framebuffer.h"
 #include "Window.h"
+#include "MultisampleImage.h"
 
 class Swapchain
 {
@@ -35,6 +36,8 @@ private:
 
     vk::raii::SwapchainKHR handle;
     std::vector<vk::Image> images;
+    MultisampleImage multisampleImage;
+    ImageView multisampleImageView;
     std::vector<Framebuffer> framebuffers;
 
     void recreate(vk::SwapchainKHR oldSwapchain = nullptr);
