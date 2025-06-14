@@ -36,6 +36,10 @@ int main()
 	    }
 	*/
 
+	    for (int i = 0; i < vertices.size(); ++i) {
+		vertices[i].position.x += 0.001f;
+	    }
+
 	    renderer.draw(vertices);
 	}
     } catch (std::runtime_error& error) {
