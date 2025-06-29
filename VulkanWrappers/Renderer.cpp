@@ -13,13 +13,18 @@ Renderer::Renderer() :
     frameFence(device.getHandle(), true),
     renderPass(device.getHandle()),
     vertexBuffer(device, 100),
-    pipelineLayout(device.getHandle()),
+    //pipelineLayout(device.getHandle()),
+    imageSampler(device.getHandle()),
+    descriptorSetLayout(device.getHandle(), imageSampler.getHandle()),
+    pipelineLayout(device.getHandle(), descriptorSetLayout.getHandle()),
     pipeline(device.getHandle(), renderPass.getHandle(),
 	pipelineLayout.getHandle(), window.getHandle()),
     swapchain(device, renderPass.getHandle(),
 	surface.getHandle(), window),
     graphicsCommandPool(device),
     presentCommandPool(device),
+    texture("gunEmoji.jpg", device, graphicsCommandPool),
+    descriptorPool(device.getHandle(), descriptorSetLayout.getHandle(), texture.getImageView()),
 #ifndef NDEBUG
     debugger(instance.getHandle())
 #endif
@@ -63,7 +68,8 @@ void Renderer::draw(const std::vector<Vertex>& vertices)
 	// draw
 	vk::CommandBuffer drawCommands = graphicsCommandPool.recordDrawCommands(
 	    renderPass.getHandle(), swapchain.getFramebuffer(imageIndex), swapchain.getImage(imageIndex),
-	    window.getHandle(), pipeline, vertexBuffer.getHandle(), vertices.size());
+	    window.getHandle(), pipeline, pipelineLayout.getHandle(),
+	    descriptorPool.getDescriptorSetHandle(), vertexBuffer.getHandle(), vertices.size());
        
 	vk::PipelineStageFlags waitStage = vk::PipelineStageFlagBits::eColorAttachmentOutput;
 	vk::SubmitInfo drawSubmitInfo(acquiredImageSemaphoreHandle, waitStage,

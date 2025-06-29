@@ -20,6 +20,12 @@
 #include "DebugMessenger.h"
 #endif
 
+#include "Texture.h"
+#include "PipelineLayout.h"
+#include "DescriptorSetLayout.h"
+#include "DescriptorPool.h"
+#include "ImageSampler.h"
+
 class Renderer
 {
 public:
@@ -41,11 +47,16 @@ private:
     Fence frameFence;
     RenderPass renderPass;
     VertexBuffer vertexBuffer;
-    EmptyPipelineLayout pipelineLayout;
+    //EmptyPipelineLayout pipelineLayout;
+    ImageSampler imageSampler;
+    DescriptorSetLayout descriptorSetLayout;
+    PipelineLayout pipelineLayout;
     GraphicsPipeline pipeline;
     Swapchain swapchain;
     GraphicsCommandPool graphicsCommandPool;
     PresentCommandPool presentCommandPool;
+    Texture texture;
+    DescriptorPool descriptorPool;
 
 #ifndef NDEBUG
     DebugMessenger debugger;

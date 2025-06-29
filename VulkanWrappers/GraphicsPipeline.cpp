@@ -134,7 +134,8 @@ std::vector<vk::VertexInputAttributeDescription> getAttributeInfos()
 {
     return {
 	{ 0, 0, vk::Format::eR32G32B32Sfloat, offsetof(Vertex, position) }, // Position attribute
-	{ 1, 0, vk::Format::eR32G32B32Sfloat, offsetof(Vertex, color) }    // Color attribute
+	//{ 1, 0, vk::Format::eR32G32B32Sfloat, offsetof(Vertex, color) },    // Color attribute
+	{ 1, 0, vk::Format::eR32G32Sfloat, offsetof(Vertex, textureCoords) } // (u, v) attribute
     };
 }
 

@@ -4,11 +4,11 @@
 GraphicsCommandPool::GraphicsCommandPool(Device& device) :
     CommandPool(device.getHandle(), device.getGraphicsQueueFamilyIndex()),
     device(device),
-    drawCommands(nullptr)
+    commandBuffer(nullptr)
 {
     vk::CommandBufferAllocateInfo info(getHandle(), vk::CommandBufferLevel::ePrimary, 1);
     std::vector<vk::raii::CommandBuffer> buffers = device.getHandle().allocateCommandBuffers(info);
-    drawCommands = std::move(buffers[0]);
+    commandBuffer = std::move(buffers[0]);
 }
 
 vk::raii::CommandBuffer& GraphicsCommandPool::recordDrawCommands(
@@ -17,6 +17,8 @@ vk::raii::CommandBuffer& GraphicsCommandPool::recordDrawCommands(
     vk::Image image,
     GLFWwindow* window,
     GraphicsPipeline& pipeline,
+    vk::PipelineLayout pipelineLayout,
+    vk::DescriptorSet descriptorSet,
     vk::Buffer vertexBuffer,
     uint32_t vertexCount)
 {
@@ -24,7 +26,7 @@ vk::raii::CommandBuffer& GraphicsCommandPool::recordDrawCommands(
     getHandle().reset({});
 
     vk::CommandBufferBeginInfo beginInfo(vk::CommandBufferUsageFlagBits::eOneTimeSubmit);
-    drawCommands.begin(beginInfo);
+    commandBuffer.begin(beginInfo);
 
     int width, height;
     glfwGetFramebufferSize(window, &width, &height);
@@ -35,15 +37,18 @@ vk::raii::CommandBuffer& GraphicsCommandPool::recordDrawCommands(
     vk::ClearValue clearValue;
 
     vk::RenderPassBeginInfo renderPassInstanceInfo(renderPass, framebuffer, renderArea, clearValue);
-    drawCommands.beginRenderPass(renderPassInstanceInfo, vk::SubpassContents::eInline);
+    commandBuffer.beginRenderPass(renderPassInstanceInfo, vk::SubpassContents::eInline);
 
-    pipeline.setDynamicStateAndBind(drawCommands);
+    pipeline.setDynamicStateAndBind(commandBuffer);
+
+    commandBuffer.bindDescriptorSets(vk::PipelineBindPoint::eGraphics, pipelineLayout, 0,
+	descriptorSet, {});
 
     vk::DeviceSize zeroOffset = 0;
-    drawCommands.bindVertexBuffers(0, vertexBuffer, zeroOffset);
-    drawCommands.draw(vertexCount, 1, 0, 0);
+    commandBuffer.bindVertexBuffers(0, vertexBuffer, zeroOffset);
+    commandBuffer.draw(vertexCount, 1, 0, 0);
 
-    drawCommands.endRenderPass();
+    commandBuffer.endRenderPass();
 
     // Release exclusive ownership if presenting is performed on separate queue family
     if (device.getGraphicsQueueFamilyIndex() != device.getPresentQueueFamilyIndex()) {
@@ -59,7 +64,7 @@ vk::raii::CommandBuffer& GraphicsCommandPool::recordDrawCommands(
 	    image,
 	    subresourceRange);
 
-	drawCommands.pipelineBarrier(
+	commandBuffer.pipelineBarrier(
 	    vk::PipelineStageFlagBits::eColorAttachmentOutput,
 	    vk::PipelineStageFlagBits::eBottomOfPipe,
 	    {},
@@ -68,7 +73,79 @@ vk::raii::CommandBuffer& GraphicsCommandPool::recordDrawCommands(
 	    memoryBarrier);
     }
 
-    drawCommands.end();
+    commandBuffer.end();
+    return commandBuffer; 
+}
 
-    return drawCommands; 
+vk::raii::CommandBuffer& GraphicsCommandPool::recordTransferCommands(
+    vk::raii::Buffer& srcBuffer,
+    vk::raii::Image& dstImage,
+    uint32_t imageWidth,
+    uint32_t imageHeight)
+{
+    getHandle().reset({});
+
+    vk::CommandBufferBeginInfo beginInfo(
+	vk::CommandBufferUsageFlagBits::eOneTimeSubmit);
+    commandBuffer.begin(beginInfo);
+
+    vk::ImageSubresourceRange subresource(vk::ImageAspectFlagBits::eColor, 0, 1, 0, 1);
+
+    // Transition image to optimal destination transfer layout
+    vk::ImageMemoryBarrier initialBarrier(
+	{},
+	vk::AccessFlagBits::eTransferWrite,
+	vk::ImageLayout::eUndefined,
+	vk::ImageLayout::eTransferDstOptimal,
+	device.getGraphicsQueueFamilyIndex(),
+	device.getGraphicsQueueFamilyIndex(),
+	dstImage,
+	subresource);
+
+    commandBuffer.pipelineBarrier(
+	vk::PipelineStageFlagBits::eTopOfPipe,
+	vk::PipelineStageFlagBits::eTransfer,
+	{},
+	{},
+	{},
+	initialBarrier);
+    
+    // Copy data from buffer to image
+    vk::ImageSubresourceLayers subresourceLayers(vk::ImageAspectFlagBits::eColor, 0, 0, 1);
+
+    vk::Extent3D extent {
+	imageWidth,
+	imageHeight,
+	1
+    };
+
+    vk::BufferImageCopy region(
+	0, 0, 0,
+	subresourceLayers,
+	{},
+	extent);
+
+    commandBuffer.copyBufferToImage(srcBuffer, dstImage, vk::ImageLayout::eTransferDstOptimal, region);
+
+    // Transition image to optimal shader read only for descriptors layout
+    vk::ImageMemoryBarrier finalBarrier(
+	vk::AccessFlagBits::eTransferWrite,
+	{},
+	vk::ImageLayout::eTransferDstOptimal,
+	vk::ImageLayout::eShaderReadOnlyOptimal,
+	device.getGraphicsQueueFamilyIndex(),
+	device.getGraphicsQueueFamilyIndex(),
+	dstImage,
+	subresource);
+
+    commandBuffer.pipelineBarrier(
+	vk::PipelineStageFlagBits::eTransfer,
+	vk::PipelineStageFlagBits::eBottomOfPipe,
+	{},
+	{},
+	{},
+	finalBarrier);
+
+    commandBuffer.end();
+    return commandBuffer;
 }

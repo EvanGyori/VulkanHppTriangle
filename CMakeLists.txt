@@ -7,6 +7,7 @@ function(add_shader target shaderName shaderOutputName)
 	-o "$<TARGET_FILE_DIR:${target}>/${shaderOutputName}")
 endfunction()
 
+add_subdirectory(stb)
 add_subdirectory(base)
 add_subdirectory(GLFWWrappers)
 add_subdirectory(VulkanWrappers)
