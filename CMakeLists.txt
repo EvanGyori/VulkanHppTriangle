@@ -18,6 +18,11 @@ target_link_libraries(triangle PRIVATE GLFWWrappers VulkanWrappers)
 
 #add_custom_command(TARGET triangle POST_BUILD
 #COMMAND glslc "${CMAKE_CURRENT_SOURCE_DIR}/Shaders/shader.vert" -o "$<TARGET_FILE_DIR:triangle>/vert.spv")
+add_custom_command(TARGET triangle POST_BUILD
+    COMMAND ${CMAKE_COMMAND} -E copy_if_different
+    "${CMAKE_SOURCE_DIR}/gunEmoji.jpg"
+    "$<TARGET_FILE_DIR:triangle>/gunEmoji.jpg"
+)
 
 add_shader(triangle shader.vert vert.spv)
 add_shader(triangle shader.frag frag.spv)
